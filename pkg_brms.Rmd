@@ -1,0 +1,176 @@
+---
+title: "brms: Bayesian Regression Models using 'Stan'"
+author: "Joshua Cook"
+date: "2019-09-20"
+output:
+    html_document:
+        theme: paper
+        toc: true
+        toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+
+library(brms)
+library(tidyverse)
+```
+
+## Abstract
+
+The following is the abstract from [brms: An R Package for Bayesian Multilevel Models using Stan](https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf). Notes on the paper, follow.
+
+> The brms package implements Bayesian multilevel models in R using the probabilis- tic programming language Stan. A wide range of distributions and link functions are supported, allowing users to fit – among others – linear, robust linear, binomial, Pois- son, survival, response times, ordinal, quantile, zero-inflated, hurdle, and even non-linear models all in a multilevel context. Further modeling options include autocorrelation of the response variable, user defined covariance structures, censored data, as well as meta- analytic standard errors. Prior specifications are flexible and explicitly encourage users to apply prior distributions that actually reflect their beliefs. In addition, model fit can easily be assessed and compared using posterior-predictive checks and leave-one-out cross- validation. If you use brms, please cite this article as published in the Journal of Statistical Software (Bürkner 2017).
+
+Stan is a language for Bayesian modeling, and this package aims to prevent a researcher from having to learn, implement, debug, and optimize Stan. Stan implements Hamiltonian Monte Carlo and its extension, the No-U-Turn Sample (NUTS). These converge more quickly than other sampling algorithms for high-dimensional models.
+
+### Model description
+
+$$
+y \sim D(f_i(\eta_i), \theta) \quad \text{where} \quad \eta = \textbf{X}\beta + \textbf{Z}u
+$$
+
+| Symbol                     | Meaning                                 | Data/known or Predicted |
+| -------------------------- | --------------------------------------- | ----------------------- |
+| $y$                        | response variable                       | data                    |
+| $D$                        | distribution function of $y$ ("family") | known                   |
+| $f$                        | inverse link function                   | n/a                     |
+| $\eta$                     | linear combination of predictors        | (below)                 |
+| $\beta$                    | coefficients at the population-level    | to predict              |
+| $u$                        | coefficients at the group-level         | to predict              |
+| $\textbf{X}$, $\textbf{Z}$ | design matrices for $\beta$, $u$        | known                   |
+| $\theta$                   | family-specific parameters              | to predict              |
+
+### Prior distributions
+
+Can have every one-dimensional prior in Stan (uniform, Cauchy, Gamma, etc.). The NUTS-Sampler does not require the priors to be conjugate.
+
+### A worked example
+
+The following example uses the recurrence time of a kidney infection in patients
+
+```{r}
+head(kidney)
+```
+
+Predict the recurrence time using a log-normal model, in which the intercept as well as `age` is **nested** within `pateint`
+
+```{r}
+fit1 <- brm(
+    time | cens(censored) ~ age * sex + disease + (1 + age|patient),
+    data = kidney,
+    family = lognormal(),
+    prior = c(
+        set_prior("normal(0, 5)", class = "b"),
+        set_prior("cauchy(0, 2)", class = "sd"),
+        set_prior("lkj(2)", class = "cor")
+    ),
+    warmup = 1e3,
+    iter = 2e3,
+    chains = 4,
+    control = list(adapt_delta = 0.95)
+)
+```
+
+In the forumla above, everything before `~` corresponds to the response variable.
+Normally, this will be a single value, but can also include other information in the form of `| fun(variable)` where `fun` can be one of several provided functions including `cens()` for censored, `weights()` and `disp()` for weighting, `se()` to specify known standard errors, `trunc()`to define truncation boundaries, `trials()` for binomial models, and `cat()` to specificty the number of categories for ordinal models.
+
+To the left of the `~`, the formula is described as in the 'lme4' package. A `+` separates the effects.Group-level effects are of the form `(coefs | group)`.
+
+Below are some of the more coommon groups of family functions:
+
+* for linear and robust linear regression with `gaussian` and `student`
+* for dichotomous and categorical data `bernoulli`, `binomial`, and `categorical`
+* for count data `lognormal`, `poisson`, `negbinomial`, and `geometric`
+* for surival `lognormal`, `Gamma`, `exponential`, and `weibull`
+* for ordinal regression `cumulative`, `cratio`, `sratio`, and `acat`
+* for excess zeros `zero_inflated_poisson`, `zero_inflated_negbinomial`, `zero_inflated_binomial`, `zero_inflated_beta`, `hurdle_poisson`, `hurdle_negbinomial`, and `hurdle_gamma`
+
+
+
+## A simple example
+
+### The data
+
+The following example uses the `epilepsy` data from the `brms` package. The columns with a 'z' prefix are scaled.
+
+
+```{r}
+head(epilepsy)
+```
+
+### Fitting the model
+
+Use a Poisson regression to model the seizure counts (`count`) in epileptic patients to investigate whether the treatment (`Trt`) can reduce the seizure counts and whether the effect of the treatment varies with the baseline number of seizures a person had before treatment (`base`).
+
+```{r}
+fit1 <- brm(
+    count ~ zAge + zBase * Trt + (1|patient), 
+    data = epilepsy, 
+    family = poisson()
+)
+```
+
+The `(1|patient)` creates an intercept for each pateint because there are multiple readings per patient.
+
+The results are shown below.
+
+```{r}
+class(fit1)
+summary(fit1)
+```
+
+The top of the summary shows general information about the model including the formula, number of chains, and the number of iterations. The next section shows the *group-level* effects. If there were multiple group levels, then the correlations would be shown, too. *Population-level* effects are shown in the last section. This includes the estimate of each parameter and the posterior distribution with the two-sided 95% credible intervals.
+
+In this example, the treatment appears to have a negative effect on the number of seizures (ie. reduces the frequency of seizures) and has no interaction with the original frequency of the seizures.
+
+The `Rhat` value for the parameters describes how well the algorithm could estimate the posterior distribution of the paramter. If the value is considerably larger than 1, the algorithm did not converge and would require more iterations or stronger priors.
+
+### Plotting
+
+The posterior distributions and the chains can be visualized with the plot function.
+
+```{r}
+plot(fit1, pars = c("Trt", "zBase"))
+```
+
+The author of the package recommend susing the `marginal_effects` method to bestter understand the relationship of predictors with the response.
+
+```{r}
+plot(marginal_effects(fit1, effects = "zBase:Trt"))
+```
+
+
+### Prediction
+
+The `marginal_effects()` function uses some predictive functionality that can be called explicitely. For example, the response of patients of average age and baseline that did and did not recieve the treatment can be predicted. (The `re_formula = NA` prevents the prediction from conditioning on the group-level effects.)
+
+```{r}
+new_data <- tibble(Trt = c(0, 1), zAge = 0, zBase = 0)
+predict(fit1, newdata = new_data, re_formula = NA)
+```
+
+
+### Preventing overdispersion
+
+Include a second group-level intercept that captures possible overdispersion.
+
+```{r}
+fit2 <- brm(
+    count ~ zAge + zBase * Trt + (1|patient) + (1|obs),
+    data = epilepsy,
+    family = poisson()
+)
+```
+
+```{r}
+summary(fit2)
+```
+
+
+The models, `fit1` and `fit2` can be compared using leave-one-out cross validation.
+
+```{r}
+loo(fit1, fit2)
+```
+

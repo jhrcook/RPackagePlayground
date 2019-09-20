@@ -9,3 +9,10 @@ date: 2019-09-20
 
 This is a simple repository where I can practice using various R packages that I find interesting.
 
+## Explored
+
+
+
+## To Explore
+
+* 'lme4'
