@@ -11,16 +11,17 @@ This is a simple repository where I can practice using various R packages that I
 
 ## Explored
 
+* ['lavaan'](http://lavaan.ugent.be/index.html)
+
 
 ## In Progress
 
 * ['brms'](https://github.com/paul-buerkner/brms)
-* ['lavaan'](http://lavaan.ugent.be/index.html)
+* ['lme4'](https://cran.r-project.org/web/packages/lme4/index.html)
 
 
 ## To Explore
 
-* 'lme4'
 * ['recipes'](https://github.com/tidymodels/recipes)
 * ['rms'](http://biostat.mc.vanderbilt.edu/wiki/Main/RmS)
 * ['h2o'](https://github.com/h2oai/h2o-3)

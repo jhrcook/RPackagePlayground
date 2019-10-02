@@ -571,6 +571,256 @@ speed =~ x7 + x8 + x9</code></pre>
 &#39;</code></pre>
 <p>In the above model, the latent variables are defined using <code>=~</code>, regressions between the latent variables are defined using <code>~</code>, and covariance formulas are expressed using the <code>~~</code> operator. The last case, where two variables are connected using the <code>~~</code> operator, indicates that the variables can be correlated. For example, <code>y1 ~~ y5</code> is included becasue the “Expert ratings of the freedom of the press in 1960” may be correlated with “Expert ratings of the freedom of the press in 1965.” According to the tutorial, “[t]his is sometimes done if it is believed that the two variables have something in common that is not captured by the latent variables.” In addition, the expression <code>y2 ~~ y4 + y6</code> is just shorthand for <code>y2 ~~ y4</code> and <code>y2 ~~ y6</code>.</p>
 </div>
+<div id="fitting-the-model-1" class="section level2">
+<h2>Fitting the model</h2>
+<pre class="r"><code>fit &lt;- sem(model, data = PoliticalDemocracy)
+summary(fit, standardized = TRUE)</code></pre>
+<pre><code>## lavaan 0.6-5 ended normally after 68 iterations
+## 
+##   Estimator                                         ML
+##   Optimization method                           NLMINB
+##   Number of free parameters                         31
+##                                                       
+##   Number of observations                            75
+##                                                       
+## Model Test User Model:
+##                                                       
+##   Test statistic                                38.125
+##   Degrees of freedom                                35
+##   P-value (Chi-square)                           0.329
+## 
+## Parameter Estimates:
+## 
+##   Information                                 Expected
+##   Information saturated (h1) model          Structured
+##   Standard errors                             Standard
+## 
+## Latent Variables:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##   ind60 =~                                                              
+##     x1                1.000                               0.670    0.920
+##     x2                2.180    0.139   15.742    0.000    1.460    0.973
+##     x3                1.819    0.152   11.967    0.000    1.218    0.872
+##   dem60 =~                                                              
+##     y1                1.000                               2.223    0.850
+##     y2                1.257    0.182    6.889    0.000    2.794    0.717
+##     y3                1.058    0.151    6.987    0.000    2.351    0.722
+##     y4                1.265    0.145    8.722    0.000    2.812    0.846
+##   dem65 =~                                                              
+##     y5                1.000                               2.103    0.808
+##     y6                1.186    0.169    7.024    0.000    2.493    0.746
+##     y7                1.280    0.160    8.002    0.000    2.691    0.824
+##     y8                1.266    0.158    8.007    0.000    2.662    0.828
+## 
+## Regressions:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##   dem60 ~                                                               
+##     ind60             1.483    0.399    3.715    0.000    0.447    0.447
+##   dem65 ~                                                               
+##     ind60             0.572    0.221    2.586    0.010    0.182    0.182
+##     dem60             0.837    0.098    8.514    0.000    0.885    0.885
+## 
+## Covariances:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##  .y1 ~~                                                                 
+##    .y5                0.624    0.358    1.741    0.082    0.624    0.296
+##  .y2 ~~                                                                 
+##    .y4                1.313    0.702    1.871    0.061    1.313    0.273
+##    .y6                2.153    0.734    2.934    0.003    2.153    0.356
+##  .y3 ~~                                                                 
+##    .y7                0.795    0.608    1.308    0.191    0.795    0.191
+##  .y4 ~~                                                                 
+##    .y8                0.348    0.442    0.787    0.431    0.348    0.109
+##  .y6 ~~                                                                 
+##    .y8                1.356    0.568    2.386    0.017    1.356    0.338
+## 
+## Variances:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##    .x1                0.082    0.019    4.184    0.000    0.082    0.154
+##    .x2                0.120    0.070    1.718    0.086    0.120    0.053
+##    .x3                0.467    0.090    5.177    0.000    0.467    0.239
+##    .y1                1.891    0.444    4.256    0.000    1.891    0.277
+##    .y2                7.373    1.374    5.366    0.000    7.373    0.486
+##    .y3                5.067    0.952    5.324    0.000    5.067    0.478
+##    .y4                3.148    0.739    4.261    0.000    3.148    0.285
+##    .y5                2.351    0.480    4.895    0.000    2.351    0.347
+##    .y6                4.954    0.914    5.419    0.000    4.954    0.443
+##    .y7                3.431    0.713    4.814    0.000    3.431    0.322
+##    .y8                3.254    0.695    4.685    0.000    3.254    0.315
+##     ind60             0.448    0.087    5.173    0.000    1.000    1.000
+##    .dem60             3.956    0.921    4.295    0.000    0.800    0.800
+##    .dem65             0.172    0.215    0.803    0.422    0.039    0.039</code></pre>
+<p>To demonstrate that the model fitting is sensitive to randomly added latent variables, I add a new one called <code>myLV</code> and defined it with 4 random variables.</p>
+<pre class="r"><code>my_model &lt;- &#39;
+    # measurement model
+        ind60 =~ x1 + x2 + x3
+        dem60 =~ y1 + y2 + y3 + y4
+        dem65 =~ y5 + y6 + y7 + y8
+        myLV =~ x1 + y1 + y3 + y8
+    # regressions
+        dem60 ~ ind60
+        dem65 ~ ind60 + dem60
+    # residual correlations
+        y1 ~~ y5
+        y2 ~~ y4 + y6
+        y3 ~~ y7
+        y4 ~~ y8
+        y6 ~~ y8
+&#39;
+summary(sem(my_model, data = PoliticalDemocracy), standardized = TRUE)</code></pre>
+<pre><code>## Warning in lav_object_post_check(object): lavaan WARNING: some estimated ov
+## variances are negative</code></pre>
+<pre><code>## Warning in lav_object_post_check(object): lavaan WARNING: some estimated lv
+## variances are negative</code></pre>
+<pre><code>## lavaan 0.6-5 ended normally after 133 iterations
+## 
+##   Estimator                                         ML
+##   Optimization method                           NLMINB
+##   Number of free parameters                         36
+##                                                       
+##   Number of observations                            75
+##                                                       
+## Model Test User Model:
+##                                                       
+##   Test statistic                                30.106
+##   Degrees of freedom                                30
+##   P-value (Chi-square)                           0.460
+## 
+## Parameter Estimates:
+## 
+##   Information                                 Expected
+##   Information saturated (h1) model          Structured
+##   Standard errors                             Standard
+## 
+## Latent Variables:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##   ind60 =~                                                              
+##     x1                1.000                               0.682    0.936
+##     x2                2.138    0.161   13.313    0.000    1.457    0.971
+##     x3                1.789    0.164   10.880    0.000    1.219    0.873
+##   dem60 =~                                                              
+##     y1                1.000                               2.380    0.920
+##     y2                1.168    0.186    6.275    0.000    2.780    0.711
+##     y3                0.952    0.149    6.377    0.000    2.267    0.696
+##     y4                1.177    0.156    7.528    0.000    2.801    0.842
+##   dem65 =~                                                              
+##     y5                1.000                               2.072    0.798
+##     y6                1.219    0.173    7.031    0.000    2.525    0.754
+##     y7                1.287    0.164    7.825    0.000    2.667    0.817
+##     y8                1.296    0.165    7.854    0.000    2.685    0.832
+##   myLV =~                                                               
+##     x1                1.000                               0.044    0.060
+##     y1               38.434   90.805    0.423    0.672    1.687    0.652
+##     y3               12.139   11.514    1.054    0.292    0.533    0.164
+##     y8               -3.281    5.392   -0.608    0.543   -0.144   -0.045
+## 
+## Regressions:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##   dem60 ~                                                               
+##     ind60             1.805    0.477    3.784    0.000    0.517    0.517
+##   dem65 ~                                                               
+##     ind60             0.232    0.300    0.771    0.440    0.076    0.076
+##     dem60             0.835    0.105    7.968    0.000    0.959    0.959
+## 
+## Covariances:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##  .y1 ~~                                                                 
+##    .y5                0.529    0.359    1.473    0.141    0.529    0.379
+##  .y2 ~~                                                                 
+##    .y4                1.479    0.709    2.086    0.037    1.479    0.300
+##    .y6                2.127    0.727    2.926    0.003    2.127    0.351
+##  .y3 ~~                                                                 
+##    .y7                1.064    0.611    1.740    0.082    1.064    0.241
+##  .y4 ~~                                                                 
+##    .y8                0.198    0.459    0.432    0.666    0.198    0.063
+##  .y6 ~~                                                                 
+##    .y8                1.304    0.562    2.320    0.020    1.304    0.338
+##   ind60 ~~                                                              
+##     myLV             -0.007    0.020   -0.376    0.707   -0.245   -0.245
+## 
+## Variances:
+##                    Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+##    .x1                0.078    0.020    3.969    0.000    0.078    0.148
+##    .x2                0.128    0.069    1.864    0.062    0.128    0.057
+##    .x3                0.463    0.089    5.196    0.000    0.463    0.237
+##    .y1               -0.798    5.853   -0.136    0.892   -0.798   -0.119
+##    .y2                7.547    1.376    5.485    0.000    7.547    0.494
+##    .y3                5.486    1.201    4.566    0.000    5.486    0.517
+##    .y4                3.217    0.736    4.369    0.000    3.217    0.291
+##    .y5                2.441    0.490    4.980    0.000    2.441    0.362
+##    .y6                4.852    0.900    5.392    0.000    4.852    0.432
+##    .y7                3.537    0.716    4.941    0.000    3.537    0.332
+##    .y8                3.069    0.721    4.256    0.000    3.069    0.295
+##     ind60             0.464    0.097    4.799    0.000    1.000    1.000
+##    .dem60             4.152    0.997    4.167    0.000    0.733    0.733
+##    .dem65            -0.007    0.238   -0.031    0.975   -0.002   -0.002
+##     myLV              0.002    0.006    0.347    0.729    1.000    1.000</code></pre>
+<p>From the summary, it is obvious that there is no latent variable <code>myLV</code> as currently defined.</p>
+</div>
+</div>
+<div id="additional-syntax" class="section level1">
+<h1>Additional Syntax</h1>
+<div id="fixing-parameters" class="section level2">
+<h2>Fixing parameters</h2>
+<p>To fix a parameter in ‘lavaan’, multiply it by a numeric value. <code>y2</code> is fixed in the following model.</p>
+<pre class="txt"><code>f =~ y1 + 1*y2 + y3</code></pre>
+<p>Can specify that the covariance of latent factors are 0 by pre-multiplying by 0. The following model sets the covariance between the latent variables <code>visual</code> and <code>textual</code> with <code>speed</code> to zero. The variance of <code>speed</code> is also fixed. The variances of <code>visual</code> and <code>textual</code> are left free by default.</p>
+<pre class="txt"><code># three-factor model
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed   =~ NA*x7 + x8 + x9
+# orthogonal factors
+    visual ~~ 0*speed
+    textual ~~ 0*speed
+# fix variance of speed factor
+    speed ~~ 1*speed</code></pre>
+</div>
+<div id="simple-equality-constraints" class="section level2">
+<h2>Simple equality constraints</h2>
+<p>It is possible to set equality constraints on free parameters. This is useful if we have an * priori* reason to believe that the indicators are equivalent. It can be daccomplished one by assigning the parameters the same label (a label is assigned by multiplying the variable against a character string). In the following example, <code>x2</code> and <code>x3</code> are set to have the same parameter by assigning them both the label <code>&quot;v1&quot;</code>.</p>
+<pre class="txt"><code> visual =~ x1 + v2*x2 + v2*x3
+textual =~ x4 + x5 + x6
+  speed =~ x7 + x8 + x9</code></pre>
+</div>
+<div id="nonlinear-equality-and-inequality-constraints" class="section level2">
+<h2>Nonlinear equality and inequality constraints</h2>
+<p>The following demonstration will use this example regression model. The regression coefficients have been explicitly named <code>&quot;b1&quot;</code>, <code>&quot;b2&quot;</code>, and <code>&quot;b3&quot;</code>.</p>
+<pre class="txt"><code>y ~ b1*x1 + b2*x2 + b3*x3</code></pre>
+<p>Using a toy dataset.</p>
+<pre class="r"><code>set.seed(1234)
+Data &lt;- data.frame(y = rnorm(100), 
+                   x1 = rnorm(100), 
+                   x2 = rnorm(100),
+                   x3 = rnorm(100))
+model &lt;- &#39; y ~ b1*x1 + b2*x2 + b3*x3 &#39;
+fit &lt;- sem(model, data=Data)
+coef(fit)</code></pre>
+<pre><code>##     b1     b2     b3   y~~y 
+## -0.052  0.084  0.139  0.970</code></pre>
+<p>Suppose we wanted to set the following conrtaints on the parameters:</p>
+<p><span class="math display">\[
+b_1: b_1 = (b_2+b_3)^2 \quad \text{and} \quad b_1 \geq \exp(b_2 + b_3)
+\]</span></p>
+<p>These can be explicitly expressed as follows.</p>
+<pre class="r"><code>model.constr &lt;- &#39;
+# model with labeled parameters
+    y ~ b1*x1 + b2*x2 + b3*x3
+# constraints
+    b1 == (b2 + b3)^2
+    b1 &gt; exp(b2 + b3)
+&#39;</code></pre>
+<p>Refitting the model shows that the constraints were effective.</p>
+<pre class="r"><code>fit &lt;- sem(model.constr, data = Data)
+coef(fit)</code></pre>
+<pre><code>##     b1     b2     b3   y~~y 
+##  0.495 -0.405 -0.299  1.610</code></pre>
+<pre class="r"><code># inspect that the constraints were observed
+a &lt;- coef(fit)
+(a[[&quot;b2&quot;]] + a[[&quot;b3&quot;]])^2</code></pre>
+<pre><code>## [1] 0.4948664</code></pre>
+<pre class="r"><code>exp(a[[&quot;b2&quot;]] + a[[&quot;b3&quot;]])</code></pre>
+<pre><code>## [1] 0.4948664</code></pre>
+</div>
 </div>
 <div class="footnotes">
 <hr />
