@@ -12,12 +12,12 @@ This is a simple repository where I can practice using various R packages that I
 ## Explored
 
 * ['lavaan'](http://lavaan.ugent.be/index.html)
+* ['lme4'](https://cran.r-project.org/web/packages/lme4/index.html)
 
 
 ## In Progress
 
 * ['brms'](https://github.com/paul-buerkner/brms)
-* ['lme4'](https://cran.r-project.org/web/packages/lme4/index.html)
 
 
 ## To Explore
@@ -25,3 +25,19 @@ This is a simple repository where I can practice using various R packages that I
 * ['recipes'](https://github.com/tidymodels/recipes)
 * ['rms'](http://biostat.mc.vanderbilt.edu/wiki/Main/RmS)
 * ['h2o'](https://github.com/h2oai/h2o-3)
+* causal inference
+* missing data ([CRAN Task View](https://cran.r-project.org/web/views/MissingData.html))
+    * ['missForest'](https://cran.r-project.org/web/packages/missForest/index.html)
+    * ['simputation'](https://cran.r-project.org/web/packages/simputation/index.html)
+    * ['dils'](https://cran.r-project.org/web/packages/dils/index.html)
+    * ['DiffusionRimp'](https://cran.r-project.org/web/packages/DiffusionRimp/index.html)
+* ['LearnBayes'](https://cran.r-project.org/web/packages/LearnBayes/index.html)
+
+
+
+
+
+
+## General Resources
+
+* [CRAN Task Views](https://cran.r-project.org/web/views/)
