@@ -1,0 +1,157 @@
+---
+title: "'dils': Data-Informed Link Strength"
+subtitle: "Combine multiple-relationship networks into a single weighted network and impute (fill-in) missing network links"
+author: "Joshua Cook"
+date: "10/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dils)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(tidyverse)
+
+set.seed(0)
+
+color_1 <- "darkorchid1"
+```
+
+[![R](https://img.shields.io/badge/CRAN-dils-276DC3.svg?style=flat&logo=R)](https://cran.r-project.org/web/packages/dils/index.html)
+
+This package does not have detailed documentation nor vignettes, so I will just be playing around with it here.
+The following is the provided description of the package:
+
+> Combine multiple-relationship networks into a single weighted network.
+The approach is similar to factor analysis in the that contribution from each constituent network varies so as to maximize the information gleaned from the multiple-relationship networks.
+This implementation uses Principal Component Analysis calculated using 'prcomp' with bootstrap subsampling. Missing links are imputed using the method of [Chen *et al.* (2012)](https://clgiles.ist.psu.edu/pubs/SAC2012-discovering-missing-links.pdf).
+
+In the [PDF doc](), the author provides the following informartion on using the package:
+
+> Start with a table (data.frame, tab-delimited file, database) where each row/record represents a link between two nodes (a dyad) in a directed or undirected network and each column represents a different relationship between the two nodes, ie. each column is a network.
+DILS combines these columns/networks into a single network that is a weighted sum of the constituent networks.
+The resulting DILS network uses information from all of the constituent networks and contains more information than any of the constituent networks.
+The output is a data.frame of DILS scores for each dyad, therefore is a single network ready for analysis using igraph or other social network analysis (SNA) tools.
+
+The following is the suggested workflow for combining the information from multiple graphs:
+
+1. Start with several networks in `igraph`, adjacency list, or edgelist form.
+2. Is necessary, use `EdgelistFromIgraph` or `EdgelistFromAdjacency` to convert `igraph` and adjacency list networks to edgelist form.
+3. Use `MergeEdgelists` to combine the individual network datasets into a single dataset.
+4. Use `GenerateDilsNetwork` to synthesize the networks in the merged data set into a single
+weighted network.
+5. Use `IgraphFromEdgelist` or `AdjacencyFromEdgelist` to convert the edgelist output to the desired output.
+6. `UseRelativeNetworkInformation` on input networks and DILS network to see if/how much the information content of the DILS network exceeds the information content of the input networks.
+
+The following is a suggested workflow for imputing edges of a graph:
+
+1. Start with a binary network as an adjacency matrix (for an `igraph` use `get.adjacency()`).
+2. Use `RelationStrengthSimilarity` to calculate RSS scores for each dyad.
+3. Use `RssSuggestedNetwork` on the original network and the `RelationStrengthSimilarity` output to get a new suggested network with more edges.
+
+
+## Combinaing information from multiple graphs
+
+The first workflow above was followed here to demonstrate how the 'dils' package can be used to merge the information from multiple graphs.
+
+### Data
+
+```{r}
+el1 <- expand.grid(letters[1:7], letters[1:7], stringsAsFactors = FALSE) %>%
+    as_tibble() %>%
+    dplyr::rename(from = "Var1", to = "Var2") %>% 
+    mutate(
+        normal = rnorm(n()),
+        normal = scale(normal),
+        normal = normal * rbernoulli(n(), p = 0.25)
+    )
+
+el2 <- expand.grid(letters[1:7], letters[1:7], stringsAsFactors = FALSE) %>% 
+    as_tibble() %>%
+    dplyr::rename(from = "Var1", to = "Var2") %>% 
+    mutate(
+        pois = rpois(n(), 1.3),
+        pois = scale(pois),
+        pois = pois * rbernoulli(n(), p = 0.25)
+    )
+
+gr1 <- as_tbl_graph(el1, directed = FALSE)
+gr2 <- as_tbl_graph(el2, directed = FALSE)
+```
+
+```{r, echo=FALSE}
+gr1 %E>%
+    filter(normal != 0) %>%
+    ggraph(layout = "nicely") +
+    geom_edge_fan(aes(width = normal), color = "grey50") +
+    geom_node_point(size = 7, color = "grey25") +
+    geom_node_text(aes(label = name), color = "white") +
+    scale_edge_width_continuous(range = c(0.5, 3)) +
+    theme_graph() +
+    labs(title = "Graph 1")
+
+gr2 %E>%
+    filter(pois != 0) %>%
+    ggraph(layout = "nicely") +
+    geom_edge_fan(aes(width = pois), color = "grey50") +
+    geom_node_point(size = 7, color = "grey25") +
+    geom_node_text(aes(label = name), color = "white") +
+    scale_edge_width_continuous(range = c(0.5, 3)) +
+    theme_graph() +
+    labs(title = "Graph 2")
+```
+
+### Step 3) Merge graphs
+
+```{r}
+merged_el <- MergeEdgelists(as.data.frame(el1), as.data.frame(el2))
+head(merged_el)
+```
+
+### Step 4) Generate DILS network
+
+```{r}
+dils_edges <- GenerateDilsNetwork(merged_el, subsample = nrow(merged_el), use.cols = 3:4)
+```
+
+### Step 5) Convert the DILS edge list into a graph object
+
+```{r}
+dils_el <- dils_edges$dils.edgelist
+dils_gr <- as_tbl_graph(dils_el)
+dils_gr
+```
+
+```{r}
+dils_gr %E>% 
+    filter(dils.link.coefficients != 0) %>% 
+    ggraph(layout = "nicely") +
+    geom_edge_fan(aes(width = dils.link.coefficients), color = "grey50") +
+    geom_node_point(size = 7, color = "grey25") +
+    geom_node_text(aes(label = name), color = "white") +
+    scale_edge_width_continuous(range = c(0.5, 3)) +
+    theme_graph() +
+    labs(title = "DILS graph")
+```
+
+
+### Step 6) Compare DILS and original graphs
+
+```{r}
+el1$edge_grp <- "graph1"
+el2$edge_grp <- "graph2"
+dils_el$edge_grp <- "DILS"
+el_bind <- bind_rows(el1, el2, dils_el)
+as_tbl_graph(el_bind, directed = FALSE) %E>% 
+    filter(normal != 0 | pois != 0 | dils.link.coefficients | 0) %>%
+    ggraph(layout = "nicely") +
+    geom_edge_fan(aes(color = edge_grp)) +
+    geom_node_point(size = 7, color = "grey25") +
+    geom_node_text(aes(label = name), color = "white") +
+    theme_graph() +
+    labs(edge_color = "data source", title = "Combined graphs")
+```
+
