@@ -7,17 +7,22 @@ date: 2019-09-20
 [![jhc twitter](https://img.shields.io/badge/Twitter-@JoshDoesA-00aced.svg?style=flat&logo=twitter)](https://twitter.com/JoshDoesa)
 [![jhc website](https://img.shields.io/badge/Website-Joshua_Cook-5087B2.svg?style=flat&logo=telegram)](https://joshuacook.netlify.com)
 
-This is a simple repository where I can practice using various R packages that I find interesting.
+This is a repository where I can practice using various R packages or follow tutorials that I find interesting.
 
-## Explored
+## Explored packages
 
 * ['lavaan'](http://lavaan.ugent.be/index.html)
 * ['lme4'](https://cran.r-project.org/web/packages/lme4/index.html)
 
 
+## Tutorials
+
+
+
 ## In Progress
 
 * ['brms'](https://github.com/paul-buerkner/brms)
+* [*Bayesian modelins in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/)
 
 
 ## To Explore

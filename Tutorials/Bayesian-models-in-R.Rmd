@@ -1,0 +1,55 @@
+---
+title: 'Tutorial: Bayesian models in R'
+author: "Joshua Cook"
+date: "10/24/2019"
+output:
+    html_document:
+        theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+I stumbled across this tutorial on [*Bayesian modelins in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/) and began reading through it.
+It was quite thorough on both theory and application, so I figured it would be a good one to follow more closely.
+
+## Theory
+
+Say we are at a casino and playing roulette.
+We can bet on the color being either red ($r$) or black ($B$) with seemingly equal probability.
+The last 10 draws were 8 black and 2 reds:
+
+$B, B, r, B, B, B, r, B, B, B$
+
+Using the frequentist approach, we would assigned the probability of getting black as $f(B) = \frac{8}{10}$.
+This is the maiximum liklihood estimate, and would be a reasonable choice from a frequentist point-of-view.
+However, we can count the number of black and red squares and believe that the ball has a random chance of landing in any of them.
+Therefore, we believe that the probability of getting black should be $P(B) = 0.5$.
+
+Alternatively, we can estimate the liklihood of getting the observed data (8 of 10 as black) over many different probabilities for getting black.
+In the plot below, the x-axis values are 100 different probabilities (between 0 and 1) of black ($P(B)$) and the y-axis is the liklihood of getting 8 blacks from 10 rounds (ie. 8 successes from 10 trials).
+
+```{r}
+# 100 values for P(B).
+range_p <- seq(0, 1, length.out = 100)
+# Liklihood of 8/10 given all trials probabilities.
+densities <- dbinom(x = 8, prob = range_p, size = 10)
+```
+
+```{r, echo=FALSE}
+tibble(x = range_p, y = densities) %>% 
+    ggplot(aes(x = x)) +
+    geom_line(aes(y = y)) +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.02))) +
+    scale_x_continuous(expand = c(0, 0)) +
+    theme_bw() +
+    labs(
+        title = "Liklihood at different probabilites of getting black",
+        x = "P(B)",
+        y = "density"
+    )
+```
+
