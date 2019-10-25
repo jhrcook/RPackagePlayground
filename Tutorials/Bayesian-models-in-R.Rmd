@@ -13,10 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-I stumbled across this tutorial on [*Bayesian modelins in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/) and began reading through it.
+I stumbled across this tutorial on [*Bayesian modeling in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/) and began reading through it.
 It was quite thorough on both theory and application, so I figured it would be a good one to follow more closely.
 
 ## Theory
+
+### Maximum liklihood estimation
 
 Say we are at a casino and playing roulette.
 We can bet on the color being either red ($r$) or black ($B$) with seemingly equal probability.
@@ -42,7 +44,7 @@ densities <- dbinom(x = 8, prob = range_p, size = 10)
 ```{r, echo=FALSE}
 tibble(x = range_p, y = densities) %>% 
     ggplot(aes(x = x)) +
-    geom_line(aes(y = y)) +
+    geom_line(aes(y = y), color = "grey25") +
     scale_y_continuous(expand = expand_scale(mult = c(0, 0.02))) +
     scale_x_continuous(expand = c(0, 0)) +
     theme_bw() +
@@ -52,4 +54,183 @@ tibble(x = range_p, y = densities) %>%
         y = "density"
     )
 ```
+
+Our previous prediction for the probabiltiy of getting black was P(0.8) because it was the probability with the highest liklihood.
+This is why it was called the Maximum Liklihood Estimate (MLE).
+
+### Update beliefs: the prior distribution
+
+Though we observed 8 of 10 trials coming up black, we still have a feeling that the probability should be 0.5 because there are equal numbers of black and red slots where each one has equal probability of being selected.
+This is called the *prior* and it too has a distribution like that above (shown in red in the following plot).
+(For the plot, the values for the prior are scaled down for visualization purposes, though it does not effect the mathematics.)
+
+```{r}
+prior <- dnorm(x = range_p, mean = 0.5, sd = .1)
+```
+
+```{r, echo=FALSE}
+tibble(x = range_p, mle_y = densities, prior_y = prior / 15) %>% 
+    ggplot(aes(x = x)) +
+    geom_line(aes(y = mle_y), color = "grey25") +
+    geom_line(aes(y = prior_y), color = "red") +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.02))) +
+    scale_x_continuous(expand = c(0, 0)) +
+    theme_bw() +
+    labs(
+        title = "Liklihood at different probabilites of getting black",
+        x = "P(B)",
+        y = "density"
+    )
+```
+
+We can calculate the numerator for Bayes' theorem by multiplying the liklihood of acheiving 8 of 10 black for each $P(B)$ by the prior distribution (shown in green below).
+
+```{r}
+lik <- dbinom(x = 8, prob = range_p, size = 10)
+prior <- dnorm(x = range_p, mean = 0.5, sd = 0.1)
+bt_numerator <- lik * prior
+```
+
+```{r, echo=FALSE}
+tibble(x = range_p, mle_y = densities, prior_y = prior / 15, num = bt_numerator) %>% 
+    ggplot(aes(x = x)) +
+    geom_line(aes(y = mle_y), color = "grey25") +
+    geom_line(aes(y = prior_y), color = "red") +
+    geom_line(aes(y = num), color = "forestgreen") +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.02))) +
+    scale_x_continuous(expand = c(0, 0)) +
+    theme_bw() +
+    labs(
+        title = "Liklihood at different probabilites of getting black",
+        x = "P(B)",
+        y = "density"
+    )
+```
+
+### Standardizing the posterior
+
+The area under the curve of the probability mass function must sum to 1.
+In BT, this is solved by the denominator.
+
+```{r}
+bt_posterior <- bt_numerator / sum(bt_numerator)
+```
+
+```{r, echo=FALSE}
+tibble(x = range_p, mle_y = densities, prior_y = prior / 15, num = bt_numerator, post = bt_posterior) %>% 
+    ggplot(aes(x = x)) +
+    geom_line(aes(y = mle_y), color = "grey25") +
+    geom_line(aes(y = prior_y), color = "red") +
+    geom_line(aes(y = num), color = "forestgreen") +
+    geom_line(aes(y = post), color = "blue") +
+    scale_y_continuous(expand = expand_scale(mult = c(0, 0.02))) +
+    scale_x_continuous(expand = c(0, 0)) +
+    theme_bw() +
+    labs(
+        title = "Liklihood at different probabilites of getting black",
+        x = "P(B)",
+        y = "density"
+    )
+```
+
+## Simulation
+
+Here is another example, however this time, we will be estimating two paramters, $\mu$ and $\sigma$, from a normal distribution.
+
+For the purpose of the simulation, we will set $\mu=5$ and $\sigma=2$, but the simulation will not know this.
+Here is the underlying model and our two priors.
+
+$$
+\text{model:} \quad X \sim N(\mu, \sigma) \\
+\text{priors:} \quad \mu \sim N(0,5) \quad \sigma \sim Exp(1)
+$$
+
+Now we need the following components:
+
+1. the grid of $\mu$ and $\sigma$ over which to search, we will use 200 values of each
+2. compute the liklihood for each cell in the 200 x 200 grid
+3. compute the product between the liklihoods and our priors
+4. standardize the numerator
+
+
+We begin by declaring the real, underlying values from which the data is sampled.
+
+```{r}
+# Declare the underlying values.
+true_mu <- 5
+true_sigma <- 2
+
+# Sample from the distribution.
+set.seed(0)
+data_sample <- rnorm(100, true_mu, true_sigma)
+```
+
+The we create the grid for the search.
+We decided to try 200 values for each parameter, with various ranges that could be decided from the range of the sampled data.
+
+```{r}
+grid <- expand.grid(
+    mu = seq(0, 10, length.out = 200),
+    sigma = seq(1, 3, length.out = 200)
+)
+```
+
+We now compute the liklihood for each cell, a value for $\mu$ and $\sigma$.
+Normaly, the liklihood of finding the data for a given $\mu$ and $\sigma$ would be found by taking the product of the probabilities: $Lik_i = \prod_{j=1}^{n} P(\mu_i, \sigma_i | X_j)$.
+However, a more computationally efficient mechanism is to take the sum in the log-scale: $Lik_i = \sum_{j=1}^{n} log(P(\mu_i, \sigma_i | X_j))$.
+
+```{r}
+# Calculate the liklihood of seeing `data` given a mean of `mu` and a
+#   std. dev. of `sigma`.
+calculate_liklihood <- function(data, mu, sigma) {
+    sum(dnorm(x = data, mean = mu, sd = sigma, log = TRUE))
+}
+
+lik <- purrr::pmap_dbl(grid, calculate_liklihood, data = data_sample)
+```
+
+Then we can multiply the liklihoods with the priors.
+Since we are in log-scale, this means we add the priors.
+
+```{r}
+bt_numerator <- lik + dnorm(grid$mu, mean = 0, sd = 5, log = TRUE) + dexp(grid$sigma, 1, log = TRUE)
+```
+
+Finally, we need to standardize the numerator with the demonintator to bring the integral over the PMF to 1.
+We must do this in the exponent because we are in log-scale.
+
+```{r}
+bt_posterior <- exp(bt_numerator - max(bt_numerator))
+```
+
+Now we can plot the known and estimated values for $\mu$ and $\sigma$ on a sample taken from the posterior distribution.
+
+
+```{r}
+post_estimates <- grid[which.max(bt_posterior), ]
+post_sample <- sample_n(grid, size = 1e3, weight = bt_posterior)
+```
+
+The posterior estimates are:
+
+- $\mu$: `r round(post_estimates$mu, 3)`
+- $\sigma$: `r round(post_estimates$sigma, 3)`
+
+
+```{r, echo=FALSE}
+as_tibble(post_sample) %>%
+    ggplot(aes(x = mu, y = sigma)) +
+    geom_jitter(alpha = 0.2) +
+    geom_hline(yintercept = true_sigma, color = "red", linetype = 2) +
+    geom_vline(xintercept = true_mu, color = "red", linetype = 2) +
+    geom_hline(yintercept = post_estimates$sigma, color = "purple", linetype = 1) +
+    geom_vline(xintercept = post_estimates$mu, color = "purple", linetype = 1) +
+    theme_bw() +
+    labs(
+        title = "Posterior distribution",
+        x = "estimated mean",
+        y = "estimated std. dev."
+    )
+```
+
 

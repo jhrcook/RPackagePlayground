@@ -22,7 +22,7 @@ This is a repository where I can practice using various R packages or follow tut
 ## In Progress
 
 * ['brms'](https://github.com/paul-buerkner/brms)
-* [*Bayesian modelins in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/)
+* [*Bayesian modeling in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/)
 
 
 ## To Explore
