@@ -17,7 +17,7 @@ This is a repository where I can practice using various R packages or follow tut
 
 ## Tutorials
 
-
+* [*Computing and visualizing LDA in R*](https://www.r-bloggers.com/computing-and-visualizing-lda-in-r/)
 
 ## In Progress
 

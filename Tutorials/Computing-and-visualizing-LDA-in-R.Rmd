@@ -1,0 +1,134 @@
+---
+title: "Computing and visualizing LDA in R"
+author: "Joshua Cook"
+date: "10/28/2019"
+output:
+    html_document:
+        theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(MASS)
+library(tidyverse)
+
+iris <- as_tibble(iris) %>% janitor::clean_names()
+```
+
+## Overview
+
+Linear Discriminant Analysis (LDA) find the optimal separation of predifed-classes in a data set.
+It maximizes the separation between the means of the groups and minimizes the scatter within the groups.
+A good video was made by StatsQuest on LDA: [*StatQuest: Linear Discriminant Analysis (LDA) clearly explained.*](https://www.youtube.com/watch?v=azXCzI57Yfc)
+
+## LDA
+
+### Basics
+
+We will find the maximum separation between te species of Iris flower in the `iris` data set.
+
+```{r}
+iris
+```
+
+```{r}
+iris_lda <- MASS::lda(species ~ ., data = iris)
+iris_lda
+```
+
+The coefficients for each covariate, accessible via `iris_lda$scaling`, indicate the linear combination coefficients for each linear discriminant.
+
+We can use the singular values (`iris_lda$svd`) to compute the amount of between-group variance that is explation be each linear discriminant.
+
+```{r}
+iris_lda_proportions <- (iris_lda$svd^2) / sum(iris_lda$svd^2)
+iris_lda_proportions
+```
+
+These results indicate that the first linear discriminant explains more than 99% of the between group variance.
+
+### Cross validation
+
+We can pass `TRUE` to the `CV` argument in `MASS::lda()` to intruct it to conduct leave-one-out cross validation.
+
+```{r}
+iris_lda_cv <- MASS::lda(species ~ ., data = iris, CV = TRUE)
+```
+
+This returns a list with some new data.
+The `class` list indicates the maximum a posteriori probability (MAP) classification.
+
+```{r}
+head(iris_lda_cv$class)
+```
+
+The `posterior` list has the posterior probabilities for each class.
+
+```{r}
+head(iris_lda_cv$posterior)
+```
+
+### Predictions
+
+We can use an `lda` model to make predictions on new data.
+That is shown here by splitting the original `iris` data set into training and testing data sets.
+
+```{r}
+# Index of rows to use for training
+train_idx <- sample(1:nrow(iris), 0.8 * nrow(iris))
+
+# LDA of iris with only training subset.
+iris_lda <- lda(species ~ ., data = iris, subset = train_idx)
+
+# Make predictions on test data.
+lda_predictions <- predict(object = iris_lda,
+                           newdata = iris[-train_idx, ])
+```
+
+We can assess the predictions made by the LDA model using the `class` and `posterior` values in the returned object.
+The `x` value also has the projects of the data point on the linear discriminants.
+
+```{r}
+table(iris$species[-train_idx], lda_predictions$class)
+```
+
+
+### Plotting
+
+```{r}
+iris_lda <- lda(species ~ ., data = iris)
+iris_lda_proportions <- round((iris_lda$svd^2) / sum(iris_lda$svd^2) * 100, 1)
+predict(object = iris_lda, newdata = iris)$x %>%
+    as_tibble() %>% 
+    mutate(species = iris$species) %>% 
+    ggplot(aes(x = LD1, y = LD2)) +
+    geom_point(aes(color = species)) +
+    theme_bw() +
+    theme(
+        plot.title = element_text(hjust = 0.5)
+    ) +
+    labs(
+        x = glue::glue("LD1 ({iris_lda_proportions[[1]]}%)"),
+        y = glue::glue("LD1 ({iris_lda_proportions[[2]]}%)"),
+        title = "LDA of Iris dataset",
+        color = "Iris\nspecies"
+    )
+```
+
+### Quadratic discriminant analysis
+
+Quadratic discriminant analysis, QDA, is similar to LDA but does not assume homogineity of the variance-covariance matrix.
+
+```{r}
+iris_qda <- MASS::qda(species ~ ., data = iris)
+iris_qda
+```
+
+For these data, it does not improve upon LDA.
+
+```{r}
+table(iris$species, predict(iris_lda, newdata = iris)$class)
+table(iris$species, predict(iris_qda, newdata = iris)$class)
+```
+
