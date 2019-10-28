@@ -391,6 +391,7 @@ summary {
 <div id="overview" class="section level2">
 <h2>Overview</h2>
 <p>Linear Discriminant Analysis (LDA) find the optimal separation of predifed-classes in a data set. It maximizes the separation between the means of the groups and minimizes the scatter within the groups. A good video was made by StatsQuest on LDA: <a href="https://www.youtube.com/watch?v=azXCzI57Yfc"><em>StatQuest: Linear Discriminant Analysis (LDA) clearly explained.</em></a></p>
+<p>Here, I followed the tutorial from R-Bloggers <a href="https://www.r-bloggers.com/computing-and-visualizing-lda-in-r/"><em>Computing and visualizing LDA in R</em></a>. At the end, I also found an article that introduced QDA: <a href="https://www.statmethods.net/advstats/discriminant.html"><em>Discriminant Function Analysis</em></a> STHDA goes into Mixture, Flexible, and Regularized Discriminant Analysis, too, in their tutorial <a href="http://www.sthda.com/english/articles/36-classification-methods-essentials/146-discriminant-analysis-essentials-in-r/#mixture-discriminant-analysis"><em>Discriminant Analysis Essentials in R</em></a>. <strong>(I have yet to do this, but will return, soon.)</strong></p>
 </div>
 <div id="lda" class="section level2">
 <h2>LDA</h2>
@@ -479,8 +480,8 @@ lda_predictions &lt;- predict(object = iris_lda,
 <pre><code>##             
 ##              setosa versicolor virginica
 ##   setosa         12          0         0
-##   versicolor      0          7         0
-##   virginica       0          1        10</code></pre>
+##   versicolor      0         14         0
+##   virginica       0          0         4</code></pre>
 </div>
 <div id="plotting" class="section level3">
 <h3>Plotting</h3>

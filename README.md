@@ -14,16 +14,15 @@ This is a repository where I can practice using various R packages or follow tut
 * ['lavaan'](http://lavaan.ugent.be/index.html)
 * ['lme4'](https://cran.r-project.org/web/packages/lme4/index.html)
 
-
 ## Tutorials
 
-* [*Computing and visualizing LDA in R*](https://www.r-bloggers.com/computing-and-visualizing-lda-in-r/)
 
 ## In Progress
 
 * ['brms'](https://github.com/paul-buerkner/brms)
 * [*Bayesian modeling in R*](https://www.r-bloggers.com/bayesian-models-in-r-2/)
-
+* [*Computing and visualizing LDA in R*](https://www.r-bloggers.com/computing-and-visualizing-lda-in-r/)
+    + I need to finish with STHDA tutorial that goes into other forms of discriminant analysis.
 
 ## To Explore
 

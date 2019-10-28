@@ -22,6 +22,11 @@ Linear Discriminant Analysis (LDA) find the optimal separation of predifed-class
 It maximizes the separation between the means of the groups and minimizes the scatter within the groups.
 A good video was made by StatsQuest on LDA: [*StatQuest: Linear Discriminant Analysis (LDA) clearly explained.*](https://www.youtube.com/watch?v=azXCzI57Yfc)
 
+Here, I followed the tutorial from R-Bloggers [*Computing and visualizing LDA in R*](https://www.r-bloggers.com/computing-and-visualizing-lda-in-r/).
+At the end, I also found an article that introduced QDA: [*Discriminant Function Analysis*](https://www.statmethods.net/advstats/discriminant.html)
+STHDA goes into Mixture, Flexible, and Regularized Discriminant Analysis, too, in their tutorial [*Discriminant Analysis Essentials in R*](http://www.sthda.com/english/articles/36-classification-methods-essentials/146-discriminant-analysis-essentials-in-r/#mixture-discriminant-analysis).
+**(I have yet to do this, but will return, soon.)**
+
 ## LDA
 
 ### Basics
