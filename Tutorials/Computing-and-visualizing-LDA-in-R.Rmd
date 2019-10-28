@@ -3,8 +3,9 @@ title: "Computing and visualizing LDA in R"
 author: "Joshua Cook"
 date: "10/28/2019"
 output:
-    html_document:
-        theme: flatly
+  github_document: default
+  html_document:
+    theme: flatly
 ---
 
 ```{r setup, include=FALSE}
